@@ -1,6 +1,6 @@
 ﻿services:
   treech-chatlink-creator:
-    image: treech-chatlink-creator/midianok
+    image: midianok/treech-chatlink-creator:last
     build:
       context: .
       dockerfile: Dockerfile
