@@ -18,7 +18,7 @@ IHostBuilder CreateHostBuilder(string[] args) =>
         {
             services.AddQuartz(q =>
             {
-                var jobKey = new JobKey("HelloWorldJob");
+                var jobKey = new JobKey("ChatLinkJob");
                 q.AddJob<ChatLinkJob>(x => x.WithIdentity(jobKey));
 
                 q.AddTrigger(opts => opts
