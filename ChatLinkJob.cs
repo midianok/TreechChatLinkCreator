@@ -1,12 +1,38 @@
-﻿using Quartz;
+﻿using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
+using Quartz;
+using Telegram.Bot;
 
 namespace TreechChatLinkCreator;
 
-public class HelloWorld : IJob
+public partial class ChatLinkJob : IJob
 {
-    public Task Execute(IJobExecutionContext context)
+    private readonly ILogger<ChatLinkJob> _logger;
+    private readonly Regex _chatLinkRegex;
+    private readonly TelegramBotClient _telegramBotClient;
+    private const long chatId = -1002073878391;
+
+    public ChatLinkJob(ILogger<ChatLinkJob> logger)
     {
-        Console.WriteLine("wowowowowowoowowowo");
-        return Task.CompletedTask;
+        _logger = logger;
+        var botToken = Environment.GetEnvironmentVariable("TOKEN");
+        _chatLinkRegex = new Regex(@"https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)");
+        _telegramBotClient = new TelegramBotClient(botToken);
+    }
+
+    public async Task Execute(IJobExecutionContext context)
+    {
+        _logger.LogInformation("ChatInviteLink job started");
+        var link = await _telegramBotClient.CreateChatInviteLinkAsync(chatId, expireDate: DateTime.UtcNow.AddHours(1));
+
+        _logger.LogInformation("New link created {0}", link.InviteLink);
+
+        var chat = await _telegramBotClient.GetChatAsync(chatId);
+        var oldLink = _chatLinkRegex.Match(chat.Description).Groups.Values.First().Value;
+
+        var result = chat.Description.Replace(oldLink, link.InviteLink);
+        await _telegramBotClient.SetChatDescriptionAsync(chatId, result);
+        _logger.LogInformation("Description updated");
+
     }
 }
